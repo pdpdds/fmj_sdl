@@ -18,5 +18,8 @@
     <ClCompile Include="FMJMENU.C">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="FMJ.C">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

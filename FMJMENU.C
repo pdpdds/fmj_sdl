@@ -10,9 +10,11 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_rwops.h>
 
 SDL_Window* pWindow = 0;
 SDL_Renderer* pRenderer = 0;
+SDL_Surface* gScreenSurface = NULL;
 
 //= Define ===========================================================
 
@@ -94,7 +96,6 @@ typedef struct {
 
 typedef struct {
 
-	Byte* SData;
 	Word ex;
 	Word ey;
 	SDL_Texture* pTexture;
@@ -162,15 +163,8 @@ extern void SoundFX(unsigned number);
 extern void Gamma(Byte* pal, int gammano);
 
 
-int  GetKey(void);
-
-void SaveRange(int sx, int sy, int ex, int ey, Byte* mem);
-
-void RestoreRange(int sx, int sy, int ex, int ey, Byte* mem);
-
 void PcxView(Byte* fname);
 
-void PcxView2(Byte* fname);
 
 void PaletteLoad(void);
 
@@ -233,9 +227,6 @@ void Finality(void);
 
 
 //= Data =============================================================
-Byte* VRam = 0;       // 가상 비디오 램
-
-Byte* VRam2;       // 후면 비디오 램
 
 PCXHDR PcxHead;                       // Pcx 구조체 정의.
 
@@ -442,63 +433,9 @@ void FadeOut(Byte* pal)
 
 
 
-// 지정된 곳의 장소를 저장한다.
-
-void SaveRange(int sx, int sy, int ex, int ey, Byte* mem)
-
-{
-
-	Word i, j, index;
 
 
 
-	for (i = sy; i < ey + 1; i++)
-
-	{
-
-		for (j = sx; j < ex + 1; j++)
-
-		{
-
-			index = CordTable[i] + j;
-
-			mem[index] = *(VRam + index);
-
-		}
-
-	}
-
-}
-
-
-
-// 지정된 곳에 저장된 데이타를 복구한다.
-
-void RestoreRange(int sx, int sy, int ex, int ey, Byte* mem)
-
-{
-
-	Word i, j, index;
-
-
-
-	for (i = sy; i < ey + 1; i++)
-
-	{
-
-		for (j = sx; j < ex + 1; j++)
-
-		{
-
-			index = CordTable[i] + j;
-
-			*(VRam + index) = mem[index];
-
-		}
-
-	}
-
-}
 
 
 
@@ -512,207 +449,10 @@ SDL_Texture* shead_texture = 0;
 
 void PcxView(Byte* fname)
 {
-	FILE* fp;
-
-	int  rc, si, di, x, y, xsize, ysize;
-
-	Byte ch, data;
-
-
-
-	fp = fopen(fname, "rb");
-
-
-
-	fread(&PcxHead, sizeof(PcxHead), 1, fp);
-
-
-
-	if (PcxHead.maker != 10)
-
-	{
-
-		fclose(fp);
-
-		return;
-
-	}
-
-
-
-	fseek(fp, 128, SEEK_SET);
-
-	xsize = PcxHead.x2 - PcxHead.x1 + 1;
-
-	ysize = PcxHead.y2 - PcxHead.y1 + 1;
-
-
-
-	fread(PcxMem, xsize * ysize, 1, fp);
-
-	fclose(fp);
-
-
-
-	di = si = x = y = 0;
-
-	while (1)
-
-	{
-
-		ch = PcxMem[si++];
-
-		if ((ch & 0xC0) == 0xC0)
-
-		{
-
-			rc = ch & 0x3F;
-
-			data = PcxMem[si++];
-
-		}
-
-		else
-
-		{
-
-			rc = 1;
-
-			data = ch;
-
-		}
-
-		while (rc--)
-
-		{
-
-			*(VRam + (CordTable[y] + x)) = data;
-
-			x++;
-
-		}
-
-
-
-		if (x >= xsize)
-
-		{
-
-			x = 0;
-
-			y++;
-
-		}
-
-
-
-		if (y >= ysize) break;
-
-	}
-
+	
 	SDL_Surface* loadedSurface = IMG_Load(fname);
 	shead_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 }
-
-
-
-void PcxView2(Byte* fname)
-{
-
-	FILE* fp;
-
-	int  rc, si, di, x, y, xsize, ysize;
-
-	Byte ch, data;
-
-
-
-	fp = fopen(fname, "rb");
-
-
-
-	fread(&PcxHead, sizeof(PcxHead), 1, fp);
-
-
-
-	if (PcxHead.maker != 10)
-
-	{
-
-		fclose(fp);
-
-		return;
-
-	}
-
-
-
-	fseek(fp, 128, SEEK_SET);
-
-	xsize = PcxHead.x2 - PcxHead.x1 + 1;
-
-	ysize = PcxHead.y2 - PcxHead.y1 + 1;
-
-
-
-	fread(PcxMem, xsize * ysize, 1, fp);
-
-	fclose(fp);
-
-
-
-	di = si = x = y = 0;
-
-	while (1)
-
-	{
-
-		ch = PcxMem[si++];
-
-		if ((ch & 0xC0) == 0xC0)
-
-		{
-
-			rc = ch & 0x3F;
-
-			data = PcxMem[si++];
-
-		}
-
-		else
-
-		{
-
-			rc = 1;
-
-			data = ch;
-
-		}
-
-		while (rc--)
-		{
-
-			*(VRam2 + (CordTable[y] + x)) = data;
-			x++;
-
-		}
-
-		if (x >= xsize)
-
-		{
-
-			x = 0;
-
-			y++;
-		}
-
-
-		if (y >= ysize) break;
-
-	}
-
-}
-
 
 
 // Fmj Menu Palette를 로드하여 초기화한다.
@@ -800,8 +540,7 @@ SDL_Texture* fmjh_texture = 0;
 
 void LoadMenuFont2(void)
 {
-	PcxView2("FMJA.PCX");
-
+	
 	SDL_Surface* loadedSurface = IMG_Load("FMJA.PCX");
 	fmja_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -815,7 +554,6 @@ void LoadMenuFont2(void)
 
 
 
-	PcxView2("FMJA-1.PCX");
 	loadedSurface = IMG_Load("FMJA-1.PCX");
 	fmja1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 	
@@ -830,7 +568,7 @@ void LoadMenuFont2(void)
 
 	//
 
-	PcxView2("FMJC.PCX");
+	
 	loadedSurface = IMG_Load("FMJC.PCX");
 	fmjc_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -840,7 +578,7 @@ void LoadMenuFont2(void)
 
 
 
-	PcxView2("FMJC-1.PCX");
+	
 	loadedSurface = IMG_Load("FMJC-1.PCX");
 	fmjc1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -849,7 +587,6 @@ void LoadMenuFont2(void)
 
 	//
 
-	PcxView2("FMJB.PCX");
 	loadedSurface = IMG_Load("FMJB.PCX");
 	fmjb_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -861,8 +598,6 @@ void LoadMenuFont2(void)
 	CutSprF(fmjb_texture, 20, 144, 281, 22, 16);
 
 
-
-	PcxView2("FMJB-1.PCX");
 	loadedSurface = IMG_Load("FMJB-1.PCX");
 	fmjb1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 	CutSprF(fmjb1_texture, 20, 32, 281, 22, 17);
@@ -875,28 +610,17 @@ void LoadMenuFont2(void)
 
 	CutSprF(fmjb1_texture, 20, 144, 281, 22, 21);
 
-	//
-
-	PcxView2("FMJG.PCX");
 	loadedSurface = IMG_Load("FMJG.PCX");
 	fmjg_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
 	CutSprF(fmjg_texture, 84, 70, 150, 40, 24);
 
-	//
-
-	PcxView2("FMJD-1.PCX");
 	loadedSurface = IMG_Load("FMJD-1.PCX");
 	fmjd1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	//    CutSprF(176,14,38,11,35);
-
-	//    CutSprF(81,15,38,11,36);
 
 	CutSprF(fmjd1_texture, 152, 7, 131, 21, 35);
-
 	CutSprF(fmjd1_texture, 14, 7, 131, 21, 36);
-
 	CutSprF(fmjd1_texture, 191, 33, 94, 11, 41);
 
 	CutSprF(fmjd1_texture, 191, 50, 94, 11, 42);
@@ -905,9 +629,6 @@ void LoadMenuFont2(void)
 
 	CutSprF(fmjd1_texture, 191, 84, 94, 11, 44);
 
-
-
-	PcxView2("FMJD.PCX");
 	loadedSurface = IMG_Load("FMJD.PCX");
 	fmjd_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -919,9 +640,7 @@ void LoadMenuFont2(void)
 
 	CutSprF(fmjd_texture, 191, 84, 94, 11, 40);
 
-	//
 
-	PcxView2("FMJH-1.PCX");
 	loadedSurface = IMG_Load("FMJH-1.PCX");
 	fmjh1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -938,8 +657,6 @@ void LoadMenuFont2(void)
 	CutSprF(fmjh1_texture, 23, 163, 266, 29, 88);
 
 
-
-	PcxView2("FMJH-2.PCX");
 	loadedSurface = IMG_Load("FMJH-2.PCX");
 	fmjh2_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -956,8 +673,6 @@ void LoadMenuFont2(void)
 	CutSprF(fmjh2_texture, 23, 163, 266, 29, 94);
 
 
-
-	PcxView2("FMJH-3.PCX");
 	loadedSurface = IMG_Load("FMJH-3.PCX");
 	fmjh3_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -968,8 +683,6 @@ void LoadMenuFont2(void)
 	CutSprF(fmjh3_texture, 23, 67, 266, 29, 97);
 
 
-
-	PcxView2("FMJH.PCX");
 	loadedSurface = IMG_Load("FMJH.PCX");
 	fmjh_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -1063,7 +776,7 @@ void SprFW(int sx, int sy, int index, int flag)
 
 {
 
-	int   i, oldsx, srcount, tsize;
+	/*int   i, oldsx, srcount, tsize;
 
 	short count;
 
@@ -1187,23 +900,19 @@ void SprFW(int sx, int sy, int index, int flag)
 		}
 
 	}
-
+	*/
 }
 
 
 
 void PutSprF(int sx, int sy, int index, int flag)
 {
-	int i, j, sp, tp;
-	int Dx, Dy;
-	Byte* buf;
 
 	if (flag == 0)
 	{
-		Dx = SprM2[index].ex;
-		Dy = SprM2[index].ey;
-		buf = SprM2[index].SData;
-
+		int Dx = SprM2[index].ex;
+		int Dy = SprM2[index].ey;
+	
 		SDL_Rect rect;
 		rect.x = sx;
 		rect.y = sy;
@@ -1211,77 +920,22 @@ void PutSprF(int sx, int sy, int index, int flag)
 		rect.h = Dy;
 
 		SDL_RenderCopy(pRenderer, SprM2[index].pTexture, &rect, &rect);
-
-		sp = 0;
-		tp = sx + sy * 320;
-
-		for (j = 0; j < Dy; j++)
-		{
-
-			for (i = 0; i < Dx; i++)
-			{
-				if (buf[sp] != 0)
-					VRam[tp] = buf[sp];
-
-				sp++;
-
-				tp++;
-
-			}
-
-			tp = tp + (320 - Dx);
-
-		}
-
 	}
-
 }
 
 
 
 void CutSprF(SDL_Texture* pTexture, int sx, int sy, int dx, int dy, int index)
 {
-
-	int i, j, sp, tp;
-
 	int size;
-
-	Byte* buf;
 
 	SprM2[index].ex = (Word)dx;
 	SprM2[index].ey = (Word)dy;
 	SprM2[index].pTexture = pTexture;
 	size = dx * dy;
-
-	SprM2[index].SData = (Byte*)malloc(size);
-	memset(SprM2[index].SData, 0, size);
-
-	buf = SprM2[index].SData;
-	sp = sx + sy * 320;
-	tp = 0;
-
-	for (j = 0; j < dy; j++)
-	{
-
-		for (i = 0; i < dx; i++)
-		{
-			buf[tp] = VRam2[sp];
-			sp++;
-
-			tp++;
-
-		}
-
-		sp = sp + (320 - dx);
-
-	}
-
 }
 
-
-
 // FMJ 메인 메뉴로 복구한다.
-
 void FMJMainMenuRestore(Byte* fmjpal)
 
 {
@@ -1290,7 +944,7 @@ void FMJMainMenuRestore(Byte* fmjpal)
 
 	PcxView("FMJA.PCX");
 
-	SaveRange(85, 78, 85 + 150, 78 + 40, PcxMem);
+	//SaveRange(85, 78, 85 + 150, 78 + 40, PcxMem);
 
 	//    SprFW(64, MenuAxis[MenuNewBar], 4 + MenuNewBar, 0);
 
@@ -1311,10 +965,16 @@ void FMJMainMenuRestore(Byte* fmjpal)
 // FMJ 환경바를 지정한 거리만큼 칠한다.
 
 void FillEnvironBar(int x, int y, int dist)
-
 {
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.h = 10;
+	rect.w = dist;
 
-	int i, j;
+	SDL_SetRenderDrawColor(pRenderer, 0, 0, 255, 0);
+	SDL_RenderFillRect(pRenderer, &rect);
+	/*int i, j;
 
 
 
@@ -1323,7 +983,7 @@ void FillEnvironBar(int x, int y, int dist)
 		for (j = x; j < (x + dist); j++)
 
 			*(VRam + (CordTable[i] + j)) = 181;
-
+	*/
 }
 
 
@@ -1366,13 +1026,13 @@ void DrawCursor(int x, int y)
 
 {
 
-	int i, imsi;
+	/*int i, imsi;
 
 
 
 	imsi = CordTable[y + 6];
 
-	for (i = x; i < (x + 8); i++) *(VRam + imsi + i) = 29;
+	for (i = x; i < (x + 8); i++) *(VRam + imsi + i) = 29;*/
 
 }
 
@@ -1432,13 +1092,13 @@ int InputFont(int x, int y)
 
 			loop = 0;
 
-			//SoundFX(_ENTER_);
+			SoundFX(_ENTER_);
 
 			break;
 
 		case ESC: loop = 0;
 
-			//SoundFX(_ESC_);
+			SoundFX(_ESC_);
 
 			break;
 
@@ -1530,19 +1190,17 @@ void ShowWeapon(int idx)
 
 
 
-	RestoreRange(36, 27, 125, 74, PcxMem);
+	//RestoreRange(36, 27, 125, 74, PcxMem);
 
 	SprFW(141, 11, idx, 1);
 
-	RestoreRange(32, 142, 130, 176, PcxMem);
+	//RestoreRange(32, 142, 130, 176, PcxMem);
 
 	SprFW(20, 142, 20 + idx, 1);
 
 
 
-	//    RestoreRange(182, 14, 230, 28, PcxMem);
-
-	RestoreRange(167, 9, 167 + 131, 9 + 21, PcxMem);
+	//RestoreRange(167, 9, 167 + 131, 9 + 21, PcxMem);
 
 	if (idx > 7)
 
@@ -1564,23 +1222,20 @@ void ShowWeapon(int idx)
 
 		_itoa(FMJTotalBaseWeight, num, 10);
 
-		//    SprFW(182, 14, 35, 0);
-
-		//    PutSprF(182, 14, 35, 0);
-
+	
 		PutSprF(167, 9, 35, 0);
 
 	}
 
 	len = strlen(num);
 
-	RestoreRange(194, 121, 259, 128, PcxMem);
+	//RestoreRange(194, 121, 259, 128, PcxMem);
 
 	for (i = 0; i < len; i++) SprFW(259 - ((len - i) << 3), 121, num[i] - 1, 0);
 
 
 
-	RestoreRange(24, 102, 60, 110, PcxMem);
+	//RestoreRange(24, 102, 60, 110, PcxMem);
 
 	if (HostW[idx].ArmsFlag)
 
@@ -1616,7 +1271,7 @@ void ShowScore(int idx)
 
 	len = strlen(num);
 
-	RestoreRange(177, 168, 240, 176, PcxMem);
+	//RestoreRange(177, 168, 240, 176, PcxMem);
 
 	for (i = 0; i < len; i++) SprFW(240 - ((len - i) << 3), 168, num[i] - 1, 0);
 
@@ -1628,13 +1283,13 @@ void ShowScore(int idx)
 
 	len = strlen(num);
 
-	RestoreRange(194, 121, 259, 128, PcxMem);
+	//RestoreRange(194, 121, 259, 128, PcxMem);
 
 	for (i = 0; i < len; i++) SprFW(259 - ((len - i) << 3), 121, num[i] - 1, 0);
 
 
 
-	RestoreRange(24, 102, 60, 110, PcxMem);
+	//RestoreRange(24, 102, 60, 110, PcxMem);
 
 	if (HostW[idx].ArmsFlag)
 
@@ -1735,10 +1390,6 @@ int FMJMenu(void)
 	if (!PcxMem) return(0);
 
 
-	VRam = (Byte*)malloc(64000);
-	VRam2 = (Byte*)malloc(64000);
-
-	if (!VRam2) return(0);
 
 	LoadResource();
 
@@ -1902,20 +1553,21 @@ void ProcessMainMenuStart()
 			case SDLK_UP: MenuNewBar--;
 
 				if (MenuNewBar < 0) MenuNewBar = 3;
-				//SoundFX(_ARROW_);
+				SoundFX(_ARROW_);
 
 				break;
 
 			case SDLK_DOWN: MenuNewBar++;
 
-				if (MenuNewBar > 3) MenuNewBar = 0;
+				if (MenuNewBar > 3) 
+					MenuNewBar = 0;
 
-				//SoundFX(_ARROW_);
+				SoundFX(_ARROW_);
 
 				break;
 
 			case SDLK_RETURN:
-				//SoundFX(_ENTER_);
+				SoundFX(_ENTER_);
 				g_game_state = 1;
 				break;
 
@@ -1956,6 +1608,40 @@ void TestFont()
 	
 }
 
+void putpixel(SDL_Surface* surface, int x, int y, Uint32 pixel)
+{
+	int bpp = surface->format->BytesPerPixel;
+	/* Here p is the address to the pixel we want to set */
+	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
+
+	switch (bpp) {
+	case 1:
+		*p = pixel;
+		break;
+
+	case 2:
+		*(Uint16*)p = pixel;
+		break;
+
+	case 3:
+		if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+			p[0] = (pixel >> 16) & 0xff;
+			p[1] = (pixel >> 8) & 0xff;
+			p[2] = pixel & 0xff;
+		}
+		else {
+			p[0] = pixel & 0xff;
+			p[1] = (pixel >> 8) & 0xff;
+			p[2] = (pixel >> 16) & 0xff;
+		}
+		break;
+
+	case 4:
+		*(Uint32*)p = pixel;
+		break;
+	}
+}
+
 void FMJMainMenuStart(int judg)
 {
 
@@ -1967,13 +1653,26 @@ void FMJMainMenuStart(int judg)
 
 		PutSprF(64, 46, 4, 0);
 
-		SaveRange(85, 78, 85 + 150, 78 + 40, PcxMem);
+		//SaveRange(85, 78, 85 + 150, 78 + 40, PcxMem);
 
 		FadeIn(FMP1);
 	}
 
-	//SDL_Surface* pTexture = create_cam_img(SprM[0].PartMem, 320, SprM[0].TotalSize % 320);
+	//SDL_RWops* pixelsWop = SDL_RWFromConstMem((const unsigned char*)VRam, sizeof(320 * 200));
+	//SDL_Surface* pixelsSurface = SDL_LoadBMP_RW(pixelsWop, 1);
+
+	//SDL_Surface* pTexture = create_cam_img(VRam, 320, SprM[0].TotalSize % 320);
 	//SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pTexture);
+
+	//Uint32 yellow;
+
+	/* Map the color yellow to this display (R=0xff, G=0xFF, B=0x00)
+	   Note:  If the display is palettized, you must set the palette first.
+	*/
+	//yellow = SDL_MapRGB(gScreenSurface->format, 0xff, 0xff, 0x00);
+
+	//SDL_RWops* pixelsWop = SDL_RWFromConstMem((const unsigned char*)SprM[0].PartMem, SprM[0].TotalSize);
+	//SDL_Surface* pixelsSurface = IMG_Load_RW(pixelsWop, 1);
 	
 	int j = 1;
 
@@ -1988,7 +1687,23 @@ void FMJMainMenuStart(int judg)
 		{
 			ProcessMainMenuStart();
 			//SDL_RenderCopy(pRenderer, pTexture1, 0, 0);
-			TestFont();
+
+			
+
+			//for (int y = 0; y < 200; y++)
+			//	for (int x = 0; x < 320; x++)
+				//{
+			
+					//Uint32 pixel = 0;
+					//char r = (FMP1[VRam[x + y * 320] + 2] ) ;
+					//char g = (FMP1[VRam[x + y * 320] + 1] ) ;
+					//char b = (FMP1[VRam[x + y * 320] + 0] ) ;
+					
+
+					//pixel = SDL_MapRGB(gScreenSurface->format, r, g, b);
+					//putpixel(gScreenSurface, x, y, pixel);
+				//}
+			//TestFont();
 		}
 		else if (g_game_state == 1)
 		{
@@ -2001,7 +1716,7 @@ void FMJMainMenuStart(int judg)
 		{
 			break;
 		}
-
+		//SDL_UpdateWindowSurface(pWindow);
 		SDL_RenderPresent(pRenderer);
 	}
 }
@@ -2057,7 +1772,7 @@ void CheckFirstMission(void)
 
 	FirstMission = InputFont(92, 105);
 
-	RestoreRange(85, 78, 85 + 150, 78 + 40, PcxMem);
+	//RestoreRange(85, 78, 85 + 150, 78 + 40, PcxMem);
 
 }
 
@@ -2087,25 +1802,25 @@ void MissionStart(void)
 
 
 
-	SaveRange(36, 27, 125, 74, PcxMem);
+	//SaveRange(36, 27, 125, 74, PcxMem);
 
-	SaveRange(32, 142, 130, 176, PcxMem);
+	//SaveRange(32, 142, 130, 176, PcxMem);
 
 	//  SaveRange(24, 102, 60, 110, PcxMem);
 
 	//  SaveRange(24, 75, 27 + 272, 75 + 41, PcxMem);
 
-	SaveRange(24, 75, 24 + 280, 75 + 60, PcxMem);
+	//SaveRange(24, 75, 24 + 280, 75 + 60, PcxMem);
 
 
 
-	SaveRange(194, 121, 259, 128, PcxMem);
+	//SaveRange(194, 121, 259, 128, PcxMem);
 
-	SaveRange(177, 168, 240, 176, PcxMem);
+	//SaveRange(177, 168, 240, 176, PcxMem);
 
 	//    SaveRange(182, 14, 230, 28, PcxMem);
 
-	SaveRange(167, 9, 167 + 131, 9 + 21, PcxMem);
+	//SaveRange(167, 9, 167 + 131, 9 + 21, PcxMem);
 
 
 
@@ -2145,7 +1860,7 @@ void MissionStart(void)
 
 
 
-	RestoreRange(24, 75, 24 + 280, 75 + 60, PcxMem);
+	//RestoreRange(24, 75, 24 + 280, 75 + 60, PcxMem);
 
 	ShowScore(0);
 
@@ -2165,11 +1880,12 @@ void MissionStart(void)
 
 		{
 
-		case UP: bar--;
+		case UP: 
+			bar--;
 
 			if (bar < 0) bar = 3;
 
-			//SoundFX(_ARROW_);
+			SoundFX(_ARROW_);
 
 			break;
 
@@ -2177,7 +1893,7 @@ void MissionStart(void)
 
 			if (bar > 3) bar = 0;
 
-			//SoundFX(_ARROW_);
+			SoundFX(_ARROW_);
 
 			break;
 
@@ -2191,7 +1907,7 @@ void MissionStart(void)
 
 			ShowWeapon(idx);
 
-			//SoundFX(_BAND_);
+			SoundFX(_BAND_);
 
 		}
 
@@ -2207,16 +1923,16 @@ void MissionStart(void)
 
 			ShowWeapon(idx);
 
-			//SoundFX(_BAND_);
+			SoundFX(_BAND_);
 
 		}
 
 				 break;
 
 		case ENTER:
-			/*if ((bar == 0) || (bar == 1))
+			if ((bar == 0) || (bar == 1))
 				SoundFX(_SLD_);
-			else SoundFX(_ENTER_);*/
+			else SoundFX(_ENTER_);
 
 			MissionCommand(bar, idx);
 
@@ -2566,7 +2282,7 @@ void SellWeapon(int idx)
 
 	{
 
-		RestoreRange(36, 27, 125, 74, PcxMem);
+		//RestoreRange(36, 27, 125, 74, PcxMem);
 
 		SprFW(141, 11, idx, 1);
 
@@ -2628,23 +2344,26 @@ void MissionLoad(void)
 
 		{
 
-		case UP: bar--;
+		case UP: 
+			bar--;
+			if (bar < 0) 
+				bar = SaveFMJCount - 1;
 
-			if (bar < 0) bar = SaveFMJCount - 1;
-
-			//SoundFX(_ARROW_);
-
+			SoundFX(_ARROW_);
 			break;
 
-		case DOWN: bar++;
+		case DOWN: 
+			bar++;
 
-			if (bar >= SaveFMJCount) bar = 0;
-			//SoundFX(_ARROW_);
+			if (bar >= SaveFMJCount) 
+				bar = 0;
+			
+			SoundFX(_ARROW_);
 
 			break;
 
 		case ENTER:
-			//SoundFX(_ENTER_);
+			SoundFX(_ENTER_);
 
 			LoadFMJData(bar);
 
@@ -2652,9 +2371,10 @@ void MissionLoad(void)
 
 			break;
 
-		case ESC: loop = 0;
+		case ESC: 
+			loop = 0;
 
-			//SoundFX(_ESC_);
+			SoundFX(_ESC_);
 
 			break;
 
@@ -2881,13 +2601,8 @@ void LoadFMJData(int idx)
 // FMJ 환경을 조절한다.
 
 void Environment(void)
-
 {
-
-	int loop, key, bar, old;
-
-	//    int axis[5] = { 35, 63, 91, 119, 147 };
-
+	int loop, bar, old;
 	int axis[5] = { 32, 60, 88, 116, 144 };
 
 
@@ -2902,109 +2617,89 @@ void Environment(void)
 
 	//    SprFW(20, 32, 17, 0);
 
-	PutSprF(20, 32, 17, 0);
+	
 
-	EnvironView();
+	
 
 	FadeIn(FMP1);
 
 
 
 	while (loop)
-
 	{
+
+		SDL_RenderClear(pRenderer);
+		SDL_RenderCopy(pRenderer, shead_texture, NULL, NULL);
+		//PutSprF(20, 32, 17, 0);
 
 		old = bar;
 
-		key = GetKey();
-
-
-
-		switch (key)
-
+		SDL_Event event;
+		if (SDL_PollEvent(&event))
 		{
+			if (event.type == SDL_KEYDOWN)
+			{
+				switch (event.key.keysym.sym)
 
-		case UP: bar--;
+				{
 
-			if (bar < 0) bar = 4;
+				case SDLK_UP: 
+					bar--;
+					if (bar < 0) bar = 4;
+					SoundFX(_ARROW_);
 
-			//	     SprFW(20, axis[old], 12 + old, 0);
+					break;
 
-			//	     SprFW(20, axis[bar], 17 + bar, 0);
+				case SDLK_DOWN: 
+					bar++;
+					if (bar > 4) 
+						bar = 0;
+					
+					SoundFX(_ARROW_);
+					break;
 
-			PutSprF(20, axis[old], 12 + old, 0);
+				case SDLK_RIGHT: 
+					EnvironLeftRight(bar, PLUSMINUS[bar]);
+					SoundFX(_ARROW_);
+					break;
 
-			PutSprF(20, axis[bar], 17 + bar, 0);
+				case SDLK_LEFT: 
+					EnvironLeftRight(bar, -PLUSMINUS[bar]);
+					SoundFX(_ARROW_);
+					break;
 
-			EnvironUpDown(old, bar);
+				case SDLK_ESCAPE: 
+					loop = 0;
+					SoundFX(_ESC_);
 
-			//SoundFX(_ARROW_);
+					break;
 
-			break;
+				}
 
-		case DOWN: bar++;
-
-			if (bar > 4) bar = 0;
-
-			//	     SprFW(20, axis[old], 12 + old, 0);
-
-			//	     SprFW(20, axis[bar], 17 + bar, 0);
-
-			PutSprF(20, axis[old], 12 + old, 0);
-
-			PutSprF(20, axis[bar], 17 + bar, 0);
-
-			EnvironUpDown(old, bar);
-
-			//SoundFX(_ARROW_);
-
-			break;
-
-		case RIGHT: if (bar)
-
-			SprFW(188, axis[bar] + 3, 23, 0);
-
-				  else
-
-			SprFW(188, axis[bar] + 3, 22, 0);
-
-			EnvironLeftRight(bar, PLUSMINUS[bar]);
-
-			//SoundFX(_ARROW_);
-
-			break;
-
-		case LEFT: if (bar)
-
-			SprFW(188, axis[bar] + 3, 23, 0);
-
-				 else
-
-			SprFW(188, axis[bar] + 3, 22, 0);
-
-			EnvironLeftRight(bar, -PLUSMINUS[bar]);
-
-			//SoundFX(_ARROW_);
-
-			break;
-
-
-
-		case ESC: loop = 0;
-
-			//SoundFX(_ESC_);
-
-			break;
-
+			}
 		}
+
+		PutSprF(20, axis[old], 12 + old, 0);
+		PutSprF(20, axis[bar], 17 + bar, 0);
+
+		EnvironUpDown(old, bar);
+
+		if (bar)
+			SprFW(188, axis[bar] + 3, 23, 0);
+
+		else
+			SprFW(188, axis[bar] + 3, 22, 0);
+
+		EnvironView();
+
+		SDL_RenderPresent(pRenderer);
+
+
 
 	}
 
 	FMJMainMenuRestore(FMP1);
-
 }
-
-
 
 // FMJ의 환경 변수들을 보여준다.
 
@@ -3198,13 +2893,13 @@ void Finality(void)
 
 				case SDLK_LEFT: bar = 1 - bar;
 
-					//SoundFX(_ARROW_);
+					SoundFX(_ARROW_);
 
 					break;
 
 				case SDLK_RETURN: loop = 0;
 					g_game_state = 4;
-					//SoundFX(_ENTER_);
+					SoundFX(_ENTER_);
 					break;
 				}
 			}
@@ -3241,6 +2936,8 @@ int main(void)
 		printf("SDL_CreateWindowAndRenderer Error\n");
 		return 0;
 	}
+
+	gScreenSurface = SDL_GetWindowSurface(pWindow);
 
 	FMJMenuInit();
 

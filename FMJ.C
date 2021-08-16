@@ -1,17 +1,13 @@
 /*****************************************************
   FULL METAL JACKET start up C code
 ******************************************************/
-#include <stdlib.h>
-#include <stdio.h>
-#include <conio.h>
-#include <malloc.h>
-#include <io.h>
-#include <fcntl.h>
-#include <i86.h>
-#include <dos.h>
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <conio.h>
+#include <malloc.h>
+#include <io.h>
+#include <fcntl.h>
 #include "modplay.h"
-
 #define MAXFX 20
 
 struct config_data {
@@ -57,24 +53,24 @@ int SOUND;
 int channel = 4;
 
 unsigned char *wavfn[MAXFX] ={"fmj01.wav",   // 0  _VALCAN_
-			  "fmj02.wav",       // 1  _DING_
-			  "fmj03.wav",       // 2  _EXPLO0_
-			  "click3.wav",      // 3  _ARROW_
-			  "click10.wav",     // 4  _ESC_
-			  "sfx01.wav",       // 5  _ENTER_
-			  "siren1.wav",      // 6  _SIREN_
-			  "band.wav",        // 7  _BAND_
-			  "sld.wav",         // 8  _SLD_
-			  "gundry.wav",      // 9  _GUNDRY_
-			  "explo1.wav",      // 10 _EXPLO1_
-			  "explo2.wav",      // 11  _EXPLO2_
-			  "sgunsh.wav",      // 12  _SGUNSH_
-			  "sgunac.wav",      // 13  _SGUNAC_
-			  "cannon.wav",      // 14  _CANNON_
-			  "fthrow.wav",      // 15  _FTHROW_
-			  "mchgun.wav",      // 16  _MGUN_
-			  "drop.wav",        // 17  _DROP_
-			  "buston.wav",      // 18  _BUSTON_
+			  "fmj02.wav",       // 1  _DING_
+			  "fmj03.wav",       // 2  _EXPLO0_
+			  "click3.wav",      // 3  _ARROW_
+			  "click10.wav",     // 4  _ESC_
+			  "sfx01.wav",       // 5  _ENTER_
+			  "siren1.wav",      // 6  _SIREN_
+			  "band.wav",        // 7  _BAND_
+			  "sld.wav",         // 8  _SLD_
+			  "gundry.wav",      // 9  _GUNDRY_
+			  "explo1.wav",      // 10 _EXPLO1_
+			  "explo2.wav",      // 11  _EXPLO2_
+			  "sgunsh.wav",      // 12  _SGUNSH_
+			  "sgunac.wav",      // 13  _SGUNAC_
+			  "cannon.wav",      // 14  _CANNON_
+			  "fthrow.wav",      // 15  _FTHROW_
+			  "mchgun.wav",      // 16  _MGUN_
+			  "drop.wav",        // 17  _DROP_
+			  "buston.wav",      // 18  _BUSTON_
 			  "bust.wav"};       // 19  _BUST_
 
 Sample *FX[MAXFX];
@@ -250,7 +246,7 @@ int check_CD(void)
 
 main(int argc, char *argv[])
 {
-    Module *Song;
+    Module *Song;
     int i;
 
     if( argc > 1 )
@@ -278,8 +274,8 @@ main(int argc, char *argv[])
 	exit(1);
     }
 */
-    switch(config.sound_card) {
-
+    switch(config.sound_card) {
+
 	case 0 :
 		SOUND = 0;
 		printf("NO Sound!\n");
