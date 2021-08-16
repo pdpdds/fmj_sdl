@@ -97,6 +97,7 @@ typedef struct {
 	Byte* SData;
 	Word ex;
 	Word ey;
+	SDL_Texture* pTexture;
 
 } SpriteMem2;
 
@@ -198,7 +199,7 @@ void ShowScore(int idx);
 
 void AdjustWeight(void);
 
-void CutSprF(int sx, int sy, int dx, int dy, int index);
+void CutSprF(SDL_Texture* pTexture, int sx, int sy, int dx, int dy, int index);
 
 
 
@@ -209,60 +210,32 @@ void FMJMenuInit(void);
 
 
 void FMJMainMenuStart(int judg);
-
 void FMJMainMenuRun(void);
-
 void CheckFirstMission(void);
-
-
-
 void MissionStart(void);
-
 void MissionCommand(int ptr, int idx);
-
 void SaveFMJData(void);
-
 void BuyWeapon(int idx);
-
 int  BuyWeaponCheck(int idx);
-
 void SellWeapon(int idx);
-
-
-
 void MissionLoad(void);
-
 int  FindSaveData(void);
-
 void ShowAllSaveData(void);
-
 void ShowSaveData(int idx);
-
 void LoadFMJData(int idx);
 
-
-
 void Environment(void);
-
 void EnvironView(void);
-
 void EnvironUpDown(int old, int new);
-
 void EnvironLeftRight(int bar, int dist);
-
-
-
 void Finality(void);
 
 
 
 //= Data =============================================================
+Byte* VRam = 0;       // 가상 비디오 램
 
-
-
-Byte* VRam = (Byte*)0xA0000;       // 비디오 램.
-
-Byte* VRam2;       // 비디오 램.
+Byte* VRam2;       // 후면 비디오 램
 
 PCXHDR PcxHead;                       // Pcx 구조체 정의.
 
@@ -533,26 +506,12 @@ void RestoreRange(int sx, int sy, int ex, int ey, Byte* mem)
 
 // 리턴 값 -> 0 : PCX 화일이 아니거나 화일이 없음. 1 : 성공.
 
+
+
+SDL_Texture* shead_texture = 0;
+
 void PcxView(Byte* fname)
 {
-	SDL_Surface* loadedSurface = IMG_Load(fname);
-	SDL_Texture* shead_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
-
-	
-	while (1)
-	{		
-		SDL_RenderCopy(pRenderer, shead_texture, NULL, NULL);
-		SDL_RenderPresent(pRenderer);
-	}
-
-}
-
-
-
-void PcxView2(Byte* fname)
-
-{
-
 	FILE* fp;
 
 	int  rc, si, di, x, y, xsize, ysize;
@@ -627,7 +586,7 @@ void PcxView2(Byte* fname)
 
 		{
 
-			*(VRam2 + (CordTable[y] + x)) = data;
+			*(VRam + (CordTable[y] + x)) = data;
 
 			x++;
 
@@ -645,6 +604,107 @@ void PcxView2(Byte* fname)
 
 		}
 
+
+
+		if (y >= ysize) break;
+
+	}
+
+	SDL_Surface* loadedSurface = IMG_Load(fname);
+	shead_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
+}
+
+
+
+void PcxView2(Byte* fname)
+{
+
+	FILE* fp;
+
+	int  rc, si, di, x, y, xsize, ysize;
+
+	Byte ch, data;
+
+
+
+	fp = fopen(fname, "rb");
+
+
+
+	fread(&PcxHead, sizeof(PcxHead), 1, fp);
+
+
+
+	if (PcxHead.maker != 10)
+
+	{
+
+		fclose(fp);
+
+		return;
+
+	}
+
+
+
+	fseek(fp, 128, SEEK_SET);
+
+	xsize = PcxHead.x2 - PcxHead.x1 + 1;
+
+	ysize = PcxHead.y2 - PcxHead.y1 + 1;
+
+
+
+	fread(PcxMem, xsize * ysize, 1, fp);
+
+	fclose(fp);
+
+
+
+	di = si = x = y = 0;
+
+	while (1)
+
+	{
+
+		ch = PcxMem[si++];
+
+		if ((ch & 0xC0) == 0xC0)
+
+		{
+
+			rc = ch & 0x3F;
+
+			data = PcxMem[si++];
+
+		}
+
+		else
+
+		{
+
+			rc = 1;
+
+			data = ch;
+
+		}
+
+		while (rc--)
+		{
+
+			*(VRam2 + (CordTable[y] + x)) = data;
+			x++;
+
+		}
+
+		if (x >= xsize)
+
+		{
+
+			x = 0;
+
+			y++;
+		}
 
 
 		if (y >= ysize) break;
@@ -686,222 +746,234 @@ void PaletteLoad(void)
 // 4바이트 압축을 해서 결합을 한 폰트 화일을 로드한다.
 
 void LoadMenuFont(void)
-
 {
-
 	FILE* fp;
 
 	int i, j, size, tsize;
 
-
-
 	fp = fopen("FMJF.P", "rb");
 
-
-
 	for (i = 0; i < MENUFONTNUM; i++)
-
 	{
-
 		tsize = 0;
 
 		fseek(fp, 10, SEEK_SET);
 
-
-
 		for (j = 0; j < i; j++)
-
 		{
-
 			fread(&size, 4, 1, fp);
 
 			tsize += size;
-
 		}
 
 		fseek(fp, 1034 + tsize + 8, SEEK_SET);
 
-
-
 		fread(&tsize, 4, 1, fp);
 
 		SprM[i].TotalSize = tsize;
-
 		SprM[i].PartMem = (Byte*)malloc(tsize);
 
-
-
 		fread(SprM[i].PartMem, tsize, 1, fp);
-
 	}
 
 	fclose(fp);
-
-
-
-	//    PcxView("FMJA.PCX");
-
-
-
 }
 
 
 
+SDL_Texture* fmja_texture = 0;
+
+SDL_Texture* fmja1_texture = 0;
+SDL_Texture* fmjc_texture = 0;
+SDL_Texture* fmjc1_texture = 0;
+SDL_Texture* fmjb_texture = 0;
+SDL_Texture* fmjb1_texture = 0;
+
+
+SDL_Texture* fmjg_texture = 0;
+SDL_Texture* fmjd1_texture = 0;
+SDL_Texture* fmjd_texture = 0;
+SDL_Texture* fmjh1_texture = 0;
+SDL_Texture* fmjh2_texture = 0;
+SDL_Texture* fmjh3_texture = 0;
+SDL_Texture* fmjh_texture = 0;
+
 void LoadMenuFont2(void)
-
 {
-
 	PcxView2("FMJA.PCX");
 
-	CutSprF(64, 46, 190, 22, 0);
+	SDL_Surface* loadedSurface = IMG_Load("FMJA.PCX");
+	fmja_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(64, 74, 190, 22, 1);
+	CutSprF(fmja_texture, 64, 46, 190, 22, 0);
 
-	CutSprF(64, 102, 190, 22, 2);
+	CutSprF(fmja_texture, 64, 74, 190, 22, 1);
 
-	CutSprF(64, 130, 190, 22, 3);
+	CutSprF(fmja_texture, 64, 102, 190, 22, 2);
+
+	CutSprF(fmja_texture, 64, 130, 190, 22, 3);
 
 
 
 	PcxView2("FMJA-1.PCX");
+	loadedSurface = IMG_Load("FMJA-1.PCX");
+	fmja1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
+	
 
-	CutSprF(64, 46, 190, 22, 4);
+	CutSprF(fmja1_texture, 64, 46, 190, 22, 4);
 
-	CutSprF(64, 74, 190, 22, 5);
+	CutSprF(fmja1_texture, 64, 74, 190, 22, 5);
 
-	CutSprF(64, 102, 190, 22, 6);
+	CutSprF(fmja1_texture, 64, 102, 190, 22, 6);
 
-	CutSprF(64, 130, 190, 22, 7);
+	CutSprF(fmja1_texture, 64, 130, 190, 22, 7);
 
 	//
 
 	PcxView2("FMJC.PCX");
+	loadedSurface = IMG_Load("FMJC.PCX");
+	fmjc_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(80, 88, 72, 22, 8);
 
-	CutSprF(151, 88, 72, 22, 9);
+	CutSprF(fmjc_texture, 80, 88, 72, 22, 8);
+	CutSprF(fmjc_texture, 151, 88, 72, 22, 9);
 
 
 
 	PcxView2("FMJC-1.PCX");
+	loadedSurface = IMG_Load("FMJC-1.PCX");
+	fmjc1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(80, 88, 72, 22, 10);
-
-	CutSprF(151, 88, 72, 22, 11);
+	CutSprF(fmjc1_texture, 80, 88, 72, 22, 10);
+	CutSprF(fmjc1_texture, 151, 88, 72, 22, 11);
 
 	//
 
 	PcxView2("FMJB.PCX");
+	loadedSurface = IMG_Load("FMJB.PCX");
+	fmjb_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(20, 32, 281, 22, 12);
+	CutSprF(fmjb_texture, 20, 32, 281, 22, 12);
+	CutSprF(fmjb_texture, 20, 60, 281, 22, 13);
+	CutSprF(fmjb_texture, 20, 88, 281, 22, 14);
+	CutSprF(fmjb_texture, 20, 116, 281, 22, 15);
 
-	CutSprF(20, 60, 281, 22, 13);
-
-	CutSprF(20, 88, 281, 22, 14);
-
-	CutSprF(20, 116, 281, 22, 15);
-
-	CutSprF(20, 144, 281, 22, 16);
+	CutSprF(fmjb_texture, 20, 144, 281, 22, 16);
 
 
 
 	PcxView2("FMJB-1.PCX");
+	loadedSurface = IMG_Load("FMJB-1.PCX");
+	fmjb1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
+	CutSprF(fmjb1_texture, 20, 32, 281, 22, 17);
 
-	CutSprF(20, 32, 281, 22, 17);
+	CutSprF(fmjb1_texture, 20, 60, 281, 22, 18);
 
-	CutSprF(20, 60, 281, 22, 18);
+	CutSprF(fmjb1_texture, 20, 88, 281, 22, 19);
 
-	CutSprF(20, 88, 281, 22, 19);
+	CutSprF(fmjb1_texture, 20, 116, 281, 22, 20);
 
-	CutSprF(20, 116, 281, 22, 20);
-
-	CutSprF(20, 144, 281, 22, 21);
+	CutSprF(fmjb1_texture, 20, 144, 281, 22, 21);
 
 	//
 
 	PcxView2("FMJG.PCX");
+	loadedSurface = IMG_Load("FMJG.PCX");
+	fmjg_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(84, 70, 150, 40, 24);
+	CutSprF(fmjg_texture, 84, 70, 150, 40, 24);
 
 	//
 
 	PcxView2("FMJD-1.PCX");
+	loadedSurface = IMG_Load("FMJD-1.PCX");
+	fmjd1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
 	//    CutSprF(176,14,38,11,35);
 
 	//    CutSprF(81,15,38,11,36);
 
-	CutSprF(152, 7, 131, 21, 35);
+	CutSprF(fmjd1_texture, 152, 7, 131, 21, 35);
 
-	CutSprF(14, 7, 131, 21, 36);
+	CutSprF(fmjd1_texture, 14, 7, 131, 21, 36);
 
-	CutSprF(191, 33, 94, 11, 41);
+	CutSprF(fmjd1_texture, 191, 33, 94, 11, 41);
 
-	CutSprF(191, 50, 94, 11, 42);
+	CutSprF(fmjd1_texture, 191, 50, 94, 11, 42);
 
-	CutSprF(191, 67, 94, 11, 43);
+	CutSprF(fmjd1_texture, 191, 67, 94, 11, 43);
 
-	CutSprF(191, 84, 94, 11, 44);
+	CutSprF(fmjd1_texture, 191, 84, 94, 11, 44);
 
 
 
 	PcxView2("FMJD.PCX");
+	loadedSurface = IMG_Load("FMJD.PCX");
+	fmjd_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(191, 33, 94, 11, 37);
+	CutSprF(fmjd_texture, 191, 33, 94, 11, 37);
 
-	CutSprF(191, 50, 94, 11, 38);
+	CutSprF(fmjd_texture, 191, 50, 94, 11, 38);
 
-	CutSprF(191, 67, 94, 11, 39);
+	CutSprF(fmjd_texture, 191, 67, 94, 11, 39);
 
-	CutSprF(191, 84, 94, 11, 40);
+	CutSprF(fmjd_texture, 191, 84, 94, 11, 40);
 
 	//
 
 	PcxView2("FMJH-1.PCX");
+	loadedSurface = IMG_Load("FMJH-1.PCX");
+	fmjh1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(23, 3, 266, 29, 83);
+	CutSprF(fmjh1_texture, 23, 3, 266, 29, 83);
 
-	CutSprF(23, 35, 266, 29, 84);
+	CutSprF(fmjh1_texture, 23, 35, 266, 29, 84);
 
-	CutSprF(23, 67, 266, 29, 85);
+	CutSprF(fmjh1_texture, 23, 67, 266, 29, 85);
 
-	CutSprF(23, 99, 266, 29, 86);
+	CutSprF(fmjh1_texture, 23, 99, 266, 29, 86);
 
-	CutSprF(23, 131, 266, 29, 87);
+	CutSprF(fmjh1_texture, 23, 131, 266, 29, 87);
 
-	CutSprF(23, 163, 266, 29, 88);
+	CutSprF(fmjh1_texture, 23, 163, 266, 29, 88);
 
 
 
 	PcxView2("FMJH-2.PCX");
+	loadedSurface = IMG_Load("FMJH-2.PCX");
+	fmjh2_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(23, 3, 266, 29, 89);
+	CutSprF(fmjh2_texture, 23, 3, 266, 29, 89);
 
-	CutSprF(23, 35, 266, 29, 90);
+	CutSprF(fmjh2_texture, 23, 35, 266, 29, 90);
 
-	CutSprF(23, 67, 266, 29, 91);
+	CutSprF(fmjh2_texture, 23, 67, 266, 29, 91);
 
-	CutSprF(23, 99, 266, 29, 92);
+	CutSprF(fmjh2_texture, 23, 99, 266, 29, 92);
 
-	CutSprF(23, 131, 266, 29, 93);
+	CutSprF(fmjh2_texture, 23, 131, 266, 29, 93);
 
-	CutSprF(23, 163, 266, 29, 94);
+	CutSprF(fmjh2_texture, 23, 163, 266, 29, 94);
 
 
 
 	PcxView2("FMJH-3.PCX");
+	loadedSurface = IMG_Load("FMJH-3.PCX");
+	fmjh3_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(23, 3, 266, 29, 95);
+	CutSprF(fmjh3_texture, 23, 3, 266, 29, 95);
 
-	CutSprF(23, 35, 266, 29, 96);
+	CutSprF(fmjh3_texture, 23, 35, 266, 29, 96);
 
-	CutSprF(23, 67, 266, 29, 97);
+	CutSprF(fmjh3_texture, 23, 67, 266, 29, 97);
 
 
 
 	PcxView2("FMJH.PCX");
+	loadedSurface = IMG_Load("FMJH.PCX");
+	fmjh_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(18, 54, 276, 57, 98);
+	CutSprF(fmjh_texture,18, 54, 276, 57, 98);
 
 }
 
@@ -1043,10 +1115,7 @@ void SprFW(int sx, int sy, int index, int flag)
 
 		srcount++;
 
-
-
 		if (data1 == 0x0A)
-
 		{
 
 			count = *((short*)(buf + srcount));
@@ -1135,7 +1204,13 @@ void PutSprF(int sx, int sy, int index, int flag)
 		Dy = SprM2[index].ey;
 		buf = SprM2[index].SData;
 
+		SDL_Rect rect;
+		rect.x = sx;
+		rect.y = sy;
+		rect.w = Dx;
+		rect.h = Dy;
 
+		SDL_RenderCopy(pRenderer, SprM2[index].pTexture, &rect, &rect);
 
 		sp = 0;
 		tp = sx + sy * 320;
@@ -1145,8 +1220,7 @@ void PutSprF(int sx, int sy, int index, int flag)
 
 			for (i = 0; i < Dx; i++)
 			{
-
-				if (buf[sp] != 0) 
+				if (buf[sp] != 0)
 					VRam[tp] = buf[sp];
 
 				sp++;
@@ -1165,7 +1239,7 @@ void PutSprF(int sx, int sy, int index, int flag)
 
 
 
-void CutSprF(int sx, int sy, int dx, int dy, int index)
+void CutSprF(SDL_Texture* pTexture, int sx, int sy, int dx, int dy, int index)
 {
 
 	int i, j, sp, tp;
@@ -1174,12 +1248,9 @@ void CutSprF(int sx, int sy, int dx, int dy, int index)
 
 	Byte* buf;
 
-
-
 	SprM2[index].ex = (Word)dx;
-
 	SprM2[index].ey = (Word)dy;
-
+	SprM2[index].pTexture = pTexture;
 	size = dx * dy;
 
 	SprM2[index].SData = (Byte*)malloc(size);
@@ -1638,19 +1709,23 @@ void AdjustWeight(void)
 }
 
 
+void LoadResource()
+{
+	//- 폰트 메모리 할당.
+	LoadMenuFont();
+	LoadMenuFont2();
+
+	//- FMJ 무기 메모리 할당.
+
+	LoadMenuWeap();
+}
 
 int FMJMenu(void)
-
 {
-
 	int i;
 
-
-
 	if (SuccessFlag != 1)
-
 		FMJMenuInit();
-
 
 
 	//- 메모리를 할당한다.
@@ -1660,26 +1735,12 @@ int FMJMenu(void)
 	if (!PcxMem) return(0);
 
 
-
+	VRam = (Byte*)malloc(64000);
 	VRam2 = (Byte*)malloc(64000);
 
 	if (!VRam2) return(0);
 
-
-
-	//- 폰트 메모리 할당.
-
-	LoadMenuFont();
-
-	LoadMenuFont2();
-
-
-
-	//- FMJ 무기 메모리 할당.
-
-	LoadMenuWeap();
-
-
+	LoadResource();
 
 	MenuNewBar = MenuOldBar = CommFlag = 0;
 
@@ -1717,7 +1778,6 @@ int FMJMenu(void)
 		break;                // abort mission
 
 	case  0:
-
 		FMJMainMenuStart(0);   // 임무중 ESC 실행.
 
 		break;                // abort mission
@@ -1822,123 +1882,158 @@ void FMJMenuInit(void)
 
 
 // FMJ 메인 메뉴를 관리하는 함수.
+int g_game_state = 0;
 
-void FMJMainMenuStart(int judg)
+void ProcessMainMenuStart()
+{
+	MenuOldBar = MenuNewBar;
 
+	
+	SDL_RenderCopy(pRenderer, shead_texture, NULL, NULL);
+
+	SDL_Event event;
+	if (SDL_PollEvent(&event))
+	{
+		if (event.type == SDL_KEYDOWN)
+		{
+			switch (event.key.keysym.sym)
+			{
+
+			case SDLK_UP: MenuNewBar--;
+
+				if (MenuNewBar < 0) MenuNewBar = 3;
+				//SoundFX(_ARROW_);
+
+				break;
+
+			case SDLK_DOWN: MenuNewBar++;
+
+				if (MenuNewBar > 3) MenuNewBar = 0;
+
+				//SoundFX(_ARROW_);
+
+				break;
+
+			case SDLK_RETURN:
+				//SoundFX(_ENTER_);
+				g_game_state = 1;
+				break;
+
+			}
+		}
+	}
+
+	//if (MenuNewBar != MenuOldBar)
+	{
+		PutSprF(64, MenuAxis[MenuOldBar], MenuOldBar, 0);
+		PutSprF(64, MenuAxis[MenuNewBar], 4 + MenuNewBar, 0);
+	}
+
+
+	
+}
+
+SDL_Surface* create_cam_img(unsigned char* pixels, int w, int h)
+{
+	int bpp, pitch;
+	Uint32 rmask, gmask, bmask, amask;
+
+	bpp = 24;
+	pitch = w * 3;
+
+	amask = 0;
+	bmask = 0xff0000;
+	gmask = 0x00ff00;
+	rmask = 0x0000ff;
+
+	return SDL_CreateRGBSurfaceFrom(pixels, w, h, bpp, pitch, rmask, gmask, bmask, amask);
+
+}
+
+void TestFont()
 {
 
-	int key;
+	
+}
 
-
+void FMJMainMenuStart(int judg)
+{
 
 	if (judg == 0)
-
 	{
-
 		FadeOut(FMP1);
 
 		PcxView("FMJA.PCX");
-
-		//	SprFW(64, 46, 4, 0);
 
 		PutSprF(64, 46, 4, 0);
 
 		SaveRange(85, 78, 85 + 150, 78 + 40, PcxMem);
 
 		FadeIn(FMP1);
-
 	}
 
+	//SDL_Surface* pTexture = create_cam_img(SprM[0].PartMem, 320, SprM[0].TotalSize % 320);
+	//SDL_Texture* pTexture1 = SDL_CreateTextureFromSurface(pRenderer, pTexture);
+	
+	int j = 1;
 
-
-	while ((CommFlag == 0) || (CommFlag == 3))
-
+	//while ((CommFlag == 0) || (CommFlag == 3))
+	while (1)
 	{
+		SDL_RenderClear(pRenderer);
 
 		CommFlag = 0;
 
-		MenuOldBar = MenuNewBar;
-
-
-
-		key = GetKey();
-
-
-
-		switch (key)
-
+		if (g_game_state == 0)
 		{
-
-		case UP: MenuNewBar--;
-
-			if (MenuNewBar < 0) MenuNewBar = 3;
-
-			//SoundFX(_ARROW_);
-
-			break;
-
-		case DOWN: MenuNewBar++;
-
-			if (MenuNewBar > 3) MenuNewBar = 0;
-
-			//SoundFX(_ARROW_);
-
-			break;
-
-		case ENTER:
-			//SoundFX(_ENTER_);
-
+			ProcessMainMenuStart();
+			//SDL_RenderCopy(pRenderer, pTexture1, 0, 0);
+			TestFont();
+		}
+		else if (g_game_state == 1)
+		{
 			FMJMainMenuRun();
 
-			if (CommFlag == 3) MissionStart();
-
-			break;
-
+			if (CommFlag == 3)
+				MissionStart();
 		}
-
-		if (MenuNewBar != MenuOldBar)
-
+		else if (g_game_state == 4)
 		{
-
-			//	    SprFW(64, MenuAxis[MenuOldBar], MenuOldBar, 0);
-
-			//	    SprFW(64, MenuAxis[MenuNewBar], 4 + MenuNewBar, 0);
-
-			PutSprF(64, MenuAxis[MenuOldBar], MenuOldBar, 0);
-
-			PutSprF(64, MenuAxis[MenuNewBar], 4 + MenuNewBar, 0);
-
+			break;
 		}
 
+		SDL_RenderPresent(pRenderer);
 	}
-
 }
 
 
 
 void FMJMainMenuRun(void)
-
 {
-
 	switch (MenuNewBar)
-
 	{
 
-	case 0: if (FirstMission == 0) CheckFirstMission();
+	case 0: 
+		if (FirstMission == 0) 
+			CheckFirstMission();
 
-		if (FirstMission) MissionStart();
-
-		break;
-
-	case 1: MissionLoad();
-
-		break;
-
-	case 2: Environment();
+		if (FirstMission) 
+			MissionStart();
 
 		break;
 
-	case 3: Finality();
+	case 1: 
+		MissionLoad();
+
+		break;
+
+	case 2: 
+		Environment();
+
+		break;
+
+	case 3: 
+		Finality();
 
 		break;
 
@@ -3063,7 +3158,7 @@ void Finality(void)
 
 {
 
-	int loop, key, old, bar;
+	int loop, old, bar;
 
 	int axis[2] = { 80, 151 };
 
@@ -3086,54 +3181,50 @@ void Finality(void)
 
 
 	while (loop)
-
 	{
-
+		SDL_RenderClear(pRenderer);
+		SDL_RenderCopy(pRenderer, shead_texture, NULL, NULL);
 		old = bar;
 
-		key = GetKey();
-
-
-
-		switch (key)
-
+		SDL_Event event;
+		if (SDL_PollEvent(&event))
 		{
+			if (event.type == SDL_KEYDOWN)
+			{
+				switch (event.key.keysym.sym)
+				{
 
-		case RIGHT:
+				case SDLK_RIGHT:
 
-		case LEFT: bar = 1 - bar;
+				case SDLK_LEFT: bar = 1 - bar;
 
-			//SoundFX(_ARROW_);
+					//SoundFX(_ARROW_);
 
-			break;
+					break;
 
-		case ENTER: loop = 0;
-
-			//SoundFX(_ENTER_);
-
-			break;
-
+				case SDLK_RETURN: loop = 0;
+					g_game_state = 4;
+					//SoundFX(_ENTER_);
+					break;
+				}
+			}
 		}
 
-		if (bar != old)
-
+		//if (bar != old)
 		{
-
-			//	    SprFW(axis[old], 88, 8  + old, 0);
-
-			//	    SprFW(axis[bar], 88, 10 + bar, 0);
-
 			PutSprF(axis[old], 88, 8 + old, 0);
-
 			PutSprF(axis[bar], 88, 10 + bar, 0);
-
 		}
+
+		
+		SDL_RenderPresent(pRenderer);
 
 	}
 
 	CommFlag = 1 - bar;
 
-	if (CommFlag == 0) FMJMainMenuRestore(FMP1);
+	if (CommFlag == 0) 
+		FMJMainMenuRestore(FMP1);
 
 }
 
@@ -3151,61 +3242,14 @@ int main(void)
 		return 0;
 	}
 
-	char running = 1;
-
-	int lastTickCount = SDL_GetTicks();
-	int curTickCount = lastTickCount;
-	int k = 0;
-
 	FMJMenuInit();
 
 	FMJMenu();
 
-	while (running)
-	{
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_KEYDOWN)
-			{
-				if (event.key.keysym.sym == SDLK_ESCAPE)
-				{
-					running = 0;
-				}
-			}
-			else if (event.type == SDL_QUIT)
-			{
-				running = 0;
-			}
-		}
-
-		curTickCount = SDL_GetTicks();
-		if (curTickCount - lastTickCount > 100)
-		{
-			k++;
-			k = k % 2;
-			lastTickCount = curTickCount;
-		}
-
-		if (k == 0)
-			SDL_SetRenderDrawColor(pRenderer, 0, 255, 0, 255);
-		else
-		{
-			SDL_SetRenderDrawColor(pRenderer, 255, 0, 255, 255);
-		}
-
-		SDL_RenderClear(pRenderer);
-		SDL_RenderFillRect(pRenderer, NULL);
-
-		SDL_RenderPresent(pRenderer);
-	}
 
 	SDL_DestroyRenderer(pRenderer);
 	SDL_DestroyWindow(pWindow);
 	SDL_Quit();
-
-
-
 
 
 	printf("CommFlag is %d\n", CommFlag);
