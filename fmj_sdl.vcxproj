@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FMJ.C" />
     <ClCompile Include="FMJMENU.C" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
