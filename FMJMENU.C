@@ -2939,10 +2939,18 @@ Mix_Music* _sample[2];
 // Initializes the application data
 int Init(void)
 {
+	int result;
+	auto mixinitflags = MIX_INIT_MOD | MIX_INIT_OGG | MIX_INIT_MP3;
+	if (mixinitflags != (result = Mix_Init(mixinitflags))) {
+		printf("Could not initialize mixer(result: % d).\n", result);
+		printf("Mix_Init: % s\n", Mix_GetError());
+		exit(1);
+	}
+
 	memset(_sample, 0, sizeof(Mix_Music*) * 2);
 
 	// Set up the audio stream
-	int result = Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
+	result = Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
 	if (result < 0)
 	{
 		fprintf(stderr, "Unable to open audio: %s\n", SDL_GetError());
@@ -2955,6 +2963,9 @@ int Init(void)
 		fprintf(stderr, "Unable to allocate mixing channels: %s\n", SDL_GetError());
 		exit(-1);
 	}
+
+
+	Mix_Music* pMusic = Mix_LoadMUS("FM014.MOD");
 
 	// Load waveforms
 	for (int i = 0; i < NUM_WAVEFORMS; i++)
