@@ -453,7 +453,7 @@ SDL_Texture* shead_texture = 0;
 
 void PcxView(Byte* fname)
 {
-	
+
 	SDL_Surface* loadedSurface = IMG_Load(fname);
 	shead_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 }
@@ -544,7 +544,7 @@ SDL_Texture* fmjh_texture = 0;
 
 void LoadMenuFont2(void)
 {
-	
+
 	SDL_Surface* loadedSurface = IMG_Load("FMJA.PCX");
 	fmja_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -560,7 +560,7 @@ void LoadMenuFont2(void)
 
 	loadedSurface = IMG_Load("FMJA-1.PCX");
 	fmja1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
-	
+
 
 	CutSprF(fmja1_texture, 64, 46, 190, 22, 4);
 
@@ -572,7 +572,7 @@ void LoadMenuFont2(void)
 
 	//
 
-	
+
 	loadedSurface = IMG_Load("FMJC.PCX");
 	fmjc_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -582,7 +582,7 @@ void LoadMenuFont2(void)
 
 
 
-	
+
 	loadedSurface = IMG_Load("FMJC-1.PCX");
 	fmjc1_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
@@ -690,7 +690,7 @@ void LoadMenuFont2(void)
 	loadedSurface = IMG_Load("FMJH.PCX");
 	fmjh_texture = SDL_CreateTextureFromSurface(pRenderer, loadedSurface);
 
-	CutSprF(fmjh_texture,18, 54, 276, 57, 98);
+	CutSprF(fmjh_texture, 18, 54, 276, 57, 98);
 
 }
 
@@ -916,7 +916,7 @@ void PutSprF(int sx, int sy, int index, int flag)
 	{
 		int Dx = SprM2[index].ex;
 		int Dy = SprM2[index].ey;
-	
+
 		SDL_Rect rect;
 		rect.x = sx;
 		rect.y = sy;
@@ -1226,7 +1226,7 @@ void ShowWeapon(int idx)
 
 		_itoa(FMJTotalBaseWeight, num, 10);
 
-	
+
 		PutSprF(167, 9, 35, 0);
 
 	}
@@ -1543,7 +1543,7 @@ void ProcessMainMenuStart()
 {
 	MenuOldBar = MenuNewBar;
 
-	
+
 	SDL_RenderCopy(pRenderer, shead_texture, NULL, NULL);
 
 	SDL_Event event;
@@ -1563,7 +1563,7 @@ void ProcessMainMenuStart()
 
 			case SDLK_DOWN: MenuNewBar++;
 
-				if (MenuNewBar > 3) 
+				if (MenuNewBar > 3)
 					MenuNewBar = 0;
 
 				SoundFX(_ARROW_);
@@ -1586,7 +1586,7 @@ void ProcessMainMenuStart()
 	}
 
 
-	
+
 }
 
 SDL_Surface* create_cam_img(unsigned char* pixels, int w, int h)
@@ -1609,7 +1609,7 @@ SDL_Surface* create_cam_img(unsigned char* pixels, int w, int h)
 void TestFont()
 {
 
-	
+
 }
 
 void putpixel(SDL_Surface* surface, int x, int y, Uint32 pixel)
@@ -1677,7 +1677,7 @@ void FMJMainMenuStart(int judg)
 
 	//SDL_RWops* pixelsWop = SDL_RWFromConstMem((const unsigned char*)SprM[0].PartMem, SprM[0].TotalSize);
 	//SDL_Surface* pixelsSurface = IMG_Load_RW(pixelsWop, 1);
-	
+
 	int j = 1;
 
 	//while ((CommFlag == 0) || (CommFlag == 3))
@@ -1692,17 +1692,17 @@ void FMJMainMenuStart(int judg)
 			ProcessMainMenuStart();
 			//SDL_RenderCopy(pRenderer, pTexture1, 0, 0);
 
-			
+
 
 			//for (int y = 0; y < 200; y++)
 			//	for (int x = 0; x < 320; x++)
 				//{
-			
+
 					//Uint32 pixel = 0;
 					//char r = (FMP1[VRam[x + y * 320] + 2] ) ;
 					//char g = (FMP1[VRam[x + y * 320] + 1] ) ;
 					//char b = (FMP1[VRam[x + y * 320] + 0] ) ;
-					
+
 
 					//pixel = SDL_MapRGB(gScreenSurface->format, r, g, b);
 					//putpixel(gScreenSurface, x, y, pixel);
@@ -1732,26 +1732,26 @@ void FMJMainMenuRun(void)
 	switch (MenuNewBar)
 	{
 
-	case 0: 
-		if (FirstMission == 0) 
+	case 0:
+		if (FirstMission == 0)
 			CheckFirstMission();
 
-		if (FirstMission) 
+		if (FirstMission)
 			MissionStart();
 
 		break;
 
-	case 1: 
+	case 1:
 		MissionLoad();
 
 		break;
 
-	case 2: 
+	case 2:
 		Environment();
 
 		break;
 
-	case 3: 
+	case 3:
 		Finality();
 
 		break;
@@ -1884,7 +1884,7 @@ void MissionStart(void)
 
 		{
 
-		case UP: 
+		case UP:
 			bar--;
 
 			if (bar < 0) bar = 3;
@@ -2348,20 +2348,20 @@ void MissionLoad(void)
 
 		{
 
-		case UP: 
+		case UP:
 			bar--;
-			if (bar < 0) 
+			if (bar < 0)
 				bar = SaveFMJCount - 1;
 
 			SoundFX(_ARROW_);
 			break;
 
-		case DOWN: 
+		case DOWN:
 			bar++;
 
-			if (bar >= SaveFMJCount) 
+			if (bar >= SaveFMJCount)
 				bar = 0;
-			
+
 			SoundFX(_ARROW_);
 
 			break;
@@ -2375,7 +2375,7 @@ void MissionLoad(void)
 
 			break;
 
-		case ESC: 
+		case ESC:
 			loop = 0;
 
 			SoundFX(_ESC_);
@@ -2621,9 +2621,9 @@ void Environment(void)
 
 	//    SprFW(20, 32, 17, 0);
 
-	
 
-	
+
+
 
 	FadeIn(FMP1);
 
@@ -2647,32 +2647,32 @@ void Environment(void)
 
 				{
 
-				case SDLK_UP: 
+				case SDLK_UP:
 					bar--;
 					if (bar < 0) bar = 4;
 					SoundFX(_ARROW_);
 
 					break;
 
-				case SDLK_DOWN: 
+				case SDLK_DOWN:
 					bar++;
-					if (bar > 4) 
+					if (bar > 4)
 						bar = 0;
-					
+
 					SoundFX(_ARROW_);
 					break;
 
-				case SDLK_RIGHT: 
+				case SDLK_RIGHT:
 					EnvironLeftRight(bar, PLUSMINUS[bar]);
 					SoundFX(_ARROW_);
 					break;
 
-				case SDLK_LEFT: 
+				case SDLK_LEFT:
 					EnvironLeftRight(bar, -PLUSMINUS[bar]);
 					SoundFX(_ARROW_);
 					break;
 
-				case SDLK_ESCAPE: 
+				case SDLK_ESCAPE:
 					loop = 0;
 					SoundFX(_ESC_);
 
@@ -2706,178 +2706,107 @@ void Environment(void)
 }
 
 // FMJ의 환경 변수들을 보여준다.
-
-void EnvironView(void)
-
-{
+void EnvironView(void){
 
 	int var;
-
 	int axis[3] = { 191, 225, 259 };
 
-
-
 	var = EnvironSet[0];
-
 	FillEnvironBar(axis[var], 39, 29);
 
-
-
 	var = EnvironSet[1];
-
 	FillEnvironBar(191, 67, var * 97 / MAXVALUE[1]);
 
-
-
 	var = EnvironSet[2];
-
 	FillEnvironBar(191, 95, var * 97 / MAXVALUE[2]);
 
-
-
 	var = EnvironSet[3];
-
 	FillEnvironBar(191, 123, var * 97 / MAXVALUE[3]);
 
-
-
 	var = EnvironSet[4];
-
 	FillEnvironBar(191, 151, var * 97 / MAXVALUE[4]);
-
 }
-
 
 
 // 위, 아래로 움직이면서 환경 변수값을 보여주는 함수.
-
 void EnvironUpDown(int old, int new)
-
 {
 
 	int oldx, oldy, newx, newy;
-
 	int axis[3] = { 191, 225, 259 };
 
-
-
 	oldx = EnvironSet[old], newx = EnvironSet[new];
-
 	oldy = 39 + (old * 28), newy = 39 + (new * 28);
 
 
-
 	if (old == 0) FillEnvironBar(axis[oldx], oldy, 29);
-
 	else         FillEnvironBar(191, oldy, oldx * 97 / MAXVALUE[old]);
 
 
-
 	if (new == 0) FillEnvironBar(axis[newx], newy, 29);
-
 	else         FillEnvironBar(191, newy, newx * 97 / MAXVALUE[new]);
-
 }
 
 
-
 // 환경 변수값을 증가, 감소 시키는 함수.
-
 void EnvironLeftRight(int bar, int dist)
-
 {
-
 	int y, idx;
-
 	int axis[3] = { 191, 225, 259 };
-
-
 
 	y = 39 + (bar * 28);
 
 	switch (bar)
-
 	{
-
 	case 0: idx = EnvironSet[0];
 
 		idx += dist;
-
 		if (idx < 0)      idx = 2;
-
 		else if (idx > 2) idx = 0;
 
 		FillEnvironBar(axis[idx], y, 29);
-
 		ResolutionAdjust = idx;
-
 		EnvironSet[0] = idx;
-
 		break;
 
 	case 1: ChangeEnvironBar(1, dist);
-
 		ScreenSizeAdjust = EnvironSet[1];
-
 		break;
 
 	case 2: ChangeEnvironBar(2, dist);
-
 		BrightAdjust = EnvironSet[2];
-
 		//Gamma(FMP1, BrightAdjust);
-
 		break;
 
 	case 3: ChangeEnvironBar(3, dist);
-
 		EffectAdjust = EnvironSet[3];
-
 		//MODSetSampleVolume(EffectAdjust);
 
 		break;
 
 	case 4: ChangeEnvironBar(4, dist);
-
 		MusicAdjust = EnvironSet[4];
-
 		//MODSetMusicVolume(MusicAdjust);
-
 		break;
-
 	}
-
 }
 
-
-
 // FMJ 끝내기를 관리한다.
-
 void Finality(void)
-
 {
 
 	int loop, old, bar;
-
 	int axis[2] = { 80, 151 };
-
-
 
 	loop = 1, bar = 0;
 
-
-
 	FadeOut(FMP1);
-
 	PcxView("FMJC.PCX");
 
 	//    SprFW(91, 88, 10, 0);
 
 	PutSprF(80, 88, 10, 0);
-
 	FadeIn(FMP1);
-
-
 
 	while (loop)
 	{
@@ -2915,14 +2844,14 @@ void Finality(void)
 			PutSprF(axis[bar], 88, 10 + bar, 0);
 		}
 
-		
+
 		SDL_RenderPresent(pRenderer);
 
 	}
 
 	CommFlag = 1 - bar;
 
-	if (CommFlag == 0) 
+	if (CommFlag == 0)
 		FMJMainMenuRestore(FMP1);
 
 }
@@ -2977,12 +2906,13 @@ int Init(void)
 		}
 	}
 
+	Mix_PlayMusic(_sample[0], 0);
+
 	return 1;
 }
 
 
-#undef main
-int main(void)
+int main(int argc, char** argv)
 {
 
 	int width = 320;
